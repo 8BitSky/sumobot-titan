@@ -1,0 +1,49 @@
+/* Titan Sumo Bot - 01a Servo Potentiometer Calibration
+   Use with: Section 1, Servos, Hardware Solution
+
+   Goal: adjust each servo's potentiometer so the wheel stops at 90.
+   Remove the servos from the chassis so you can reach the
+   potentiometer on the bottom. Keep them plugged into the shield.
+
+   How to use:
+   1. Upload. Both servos are told to STOP (90).
+   2. If a wheel creeps, turn its potentiometer a tiny bit with a
+      small flathead screwdriver until the wheel stops completely.
+   3. Turn one way until the wheel just starts moving, then back the
+      other way until it just moves again. Set it halfway between.
+   4. Repeat for the other servo. Once both stay still, keep
+      LEFT_STOP and RIGHT_STOP at 90 in every other Titan sketch.
+*/
+
+#include <Servo.h>
+
+const int LEFT_SERVO_PIN  = A5;
+const int RIGHT_SERVO_PIN = A4;
+
+// Do not change these. The potentiometer does the trimming.
+const int LEFT_STOP  = 90;
+const int RIGHT_STOP = 90;
+
+Servo leftServo;
+Servo rightServo;
+
+void setup()
+{
+  delay(1000);
+  Serial.begin(9600);
+
+  leftServo.attach(LEFT_SERVO_PIN);
+  rightServo.attach(RIGHT_SERVO_PIN);
+  leftServo.write(LEFT_STOP);
+  rightServo.write(RIGHT_STOP);
+
+  Serial.println("Calibration mode: both servos are being told to STOP (90).");
+  Serial.println("Turn each potentiometer until its wheel stops completely.");
+}
+
+void loop()
+{
+  // Keep holding both servos at the stop value
+  leftServo.write(LEFT_STOP);
+  rightServo.write(RIGHT_STOP);
+} 
