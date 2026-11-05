@@ -1,0 +1,69 @@
+/* Titan Sumo Bot - 01a Servo Stop Test
+   Use with: Section 1, Servos, Software Solution
+
+   Goal: find the stop value for each wheel.
+   Keep the wheels OFF the table for this test.
+
+   How to use:
+   1. Upload. Both wheels should stay still.
+   2. If a wheel creeps, change its STOP value by 1 (try 89 or 91)
+      and upload again. Repeat until it stops.
+   3. Record your stop values. Copy them into every other Titan sketch.
+   4. Optional: change CHECK_DIRECTION to true and upload to see which
+      way each wheel spins when told to go "forward."
+*/
+
+#include <Servo.h>
+
+const int LEFT_SERVO_PIN  = A5;
+const int RIGHT_SERVO_PIN = A4;
+
+// Change these to trim your servos
+const int LEFT_STOP  = 90;
+const int RIGHT_STOP = 90;
+
+// true = spin each wheel forward for 2 seconds at startup
+const bool CHECK_DIRECTION = false;
+
+Servo leftServo;
+Servo rightServo;
+
+void setup()
+{
+  delay(1000);
+  Serial.begin(9600);
+
+  leftServo.attach(LEFT_SERVO_PIN);
+  rightServo.attach(RIGHT_SERVO_PIN);
+  leftServo.write(LEFT_STOP);
+  rightServo.write(RIGHT_STOP);
+
+  Serial.print("Left stop value: ");
+  Serial.print(LEFT_STOP);
+  Serial.print("   Right stop value: ");
+  Serial.println(RIGHT_STOP);
+
+  if (CHECK_DIRECTION)
+  {
+    Serial.println("Left wheel forward for 2 seconds...");
+    leftServo.write(120);        // forward for the left servo
+    delay(2000);
+    leftServo.write(LEFT_STOP);
+    delay(1000);
+
+    Serial.println("Right wheel forward for 2 seconds...");
+    rightServo.write(60);        // forward for the right servo (it is mounted facing the other way)
+    delay(2000);
+    rightServo.write(RIGHT_STOP);
+
+    Serial.println("Done. Did both wheels spin in the forward direction?");
+  }
+}
+
+void loop()
+{
+  // Keep holding both servos at their stop values
+  leftServo.write(LEFT_STOP);
+  rightServo.write(RIGHT_STOP);
+  Serial.println("Done. Both wheels should now be stopped!");
+} 
