@@ -1,0 +1,129 @@
+/* Titan Sumo Bot - 02 Edge Only
+   Use with: Section 2
+
+   Goal: tune your bot so it stays in the ring.
+   The bot drives forward and escapes the edge. It does NOT look for
+   opponents yet, so you can focus on the line sensors.
+
+   How to use:
+   1. Upload. Set the bot in the middle of the ring.
+   2. After the 5-blink countdown, it drives until it finds the edge.
+   3. Tune REVERSE_TIME and TURN_TIME until it stays in for 60 seconds.
+
+   Try this: what should happen when BOTH sensors see white at once?
+   Right now that case acts like "left." See the note in loop().
+*/
+
+#include <Servo.h>
+
+// Servo pins
+const int LEFT_SERVO_PIN  = A5;
+const int RIGHT_SERVO_PIN = A4;
+
+// Line sensor pins
+const int LINE_LEFT_PIN  = A3;
+const int LINE_RIGHT_PIN = A2;
+
+// Stop values. Copy your trimmed values from sketch 01a.
+const int LEFT_STOP  = 90;
+const int RIGHT_STOP = 90;
+
+// Escape tuning, in milliseconds (1000 ms = 1 second)
+int REVERSE_TIME = 500;  // how long to back up after seeing the line
+int TURN_TIME    = 300;  // how long to turn away from the line
+
+Servo leftServo;
+Servo rightServo;
+
+void setup()
+{
+  delay(1000);  // let the voltage settle before attaching servos
+  Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  leftServo.attach(LEFT_SERVO_PIN);
+  rightServo.attach(RIGHT_SERVO_PIN);
+  stopMotors();
+
+  pinMode(LINE_LEFT_PIN, INPUT_PULLUP);   // LOW = white line
+  pinMode(LINE_RIGHT_PIN, INPUT_PULLUP);  // LOW = white line
+
+  start();  // 5-second countdown
+}
+
+void loop()
+{
+  forward();  // with no opponent code, the bot just drives
+
+  int leftLine  = digitalRead(LINE_LEFT_PIN);
+  int rightLine = digitalRead(LINE_RIGHT_PIN);
+
+  // NOTE: to handle BOTH sensors seeing white, add a new "if" here that
+  // checks (leftLine == LOW && rightLine == LOW), and change the next
+  // "if" to "else if".
+
+  if (leftLine == LOW)  // left sensor sees the edge
+  {
+    Serial.println("Left line found: reverse, then turn right");
+    reverse();
+    delay(REVERSE_TIME);
+    turnRight();  // turn away from the line
+    delay(TURN_TIME);
+    forward();
+  }
+  else if (rightLine == LOW)  // right sensor sees the edge
+  {
+    Serial.println("Right line found: reverse, then turn left");
+    reverse();
+    delay(REVERSE_TIME);
+    turnLeft();  // turn away from the line
+    delay(TURN_TIME);
+    forward();
+  }
+}
+
+/* Drive functions
+   Continuous rotation servos: 90 = stop
+   The right servo is mounted the other way, so its numbers are flipped. */
+
+void forward()
+{
+  leftServo.write(120);  // slowed from 180 to avoid wheelies
+  rightServo.write(60);  // slowed from 0 to avoid wheelies
+}
+
+void reverse()
+{
+  leftServo.write(80);
+  rightServo.write(100);
+}
+
+void turnLeft()
+{
+  leftServo.write(70);
+  rightServo.write(70);
+}
+
+void turnRight()
+{
+  leftServo.write(110);
+  rightServo.write(110);
+}
+
+void stopMotors()
+{
+  leftServo.write(LEFT_STOP);
+  rightServo.write(RIGHT_STOP);
+}
+
+void start()  // blink the onboard LED 5 times as a countdown
+{
+  stopMotors();
+  for (int i = 0; i < 5; i++)
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+  }
+}
