@@ -1,0 +1,83 @@
+/* Titan Sumo Bot - 01c IR Sensor Test
+   Use with: Section 1, Part C
+
+   Goal: measure what each infrared (IR) sensor reads at different distances.
+   The wheels do NOT drive in this sketch.
+
+   How to use:
+   1. Upload, then open Tools > Serial Monitor (9600 baud).
+   2. Hold a target in front of ONE sensor at 40, 30, 20, 10, 5 and 2 cm.
+   3. Record the reading at each distance. Repeat for the other sensor.
+   4. Watch the readings at 5 cm and 2 cm closely. What happens?
+   The onboard LED turns on whenever a reading is above the threshold.
+*/
+
+#include <Servo.h>
+
+// Servo pins
+const int LEFT_SERVO_PIN  = A5;
+const int RIGHT_SERVO_PIN = A4;
+
+// IR (enemy) sensor pins
+const int ENEMY_LEFT_PIN  = A1;
+const int ENEMY_RIGHT_PIN = A0;
+
+// Stop values. Copy your trimmed values from sketch 01a.
+const int LEFT_STOP  = 90;
+const int RIGHT_STOP = 90;
+
+// Readings above this number count as "detected"
+int enemyThreshold = 200;
+
+Servo leftServo;
+Servo rightServo;
+
+void setup()
+{
+  delay(1000);
+  Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  // Hold the wheels still
+  leftServo.attach(LEFT_SERVO_PIN);
+  rightServo.attach(RIGHT_SERVO_PIN);
+  leftServo.write(LEFT_STOP);
+  rightServo.write(RIGHT_STOP);
+
+  Serial.println("IR sensor test. Readings go from 0 to 1023.");
+  Serial.print("Current threshold: ");
+  Serial.println(enemyThreshold);
+}
+
+void loop()
+{
+  int enemyLeft  = analogRead(ENEMY_LEFT_PIN);
+  int enemyRight = analogRead(ENEMY_RIGHT_PIN);
+
+  Serial.print("IR L: ");
+  Serial.print(enemyLeft);
+  Serial.print("    IR R: ");
+  Serial.print(enemyRight);
+
+  if (enemyLeft > enemyThreshold)
+  {
+    Serial.print("    <-- LEFT sees target");
+  }
+  if (enemyRight > enemyThreshold)
+  {
+    Serial.print("    <-- RIGHT sees target");
+  }
+  Serial.println();  // end the line
+
+  // LED on if either sensor is above the threshold
+  if (enemyLeft > enemyThreshold || enemyRight > enemyThreshold)
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else
+  {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+
+  delay(200);  // slow the printing down so you can read it
+} 
