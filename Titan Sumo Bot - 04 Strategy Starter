@@ -1,0 +1,181 @@
+/* Titan Sumo Bot - 04 Strategy Starter
+   Use with: Section 4
+
+   Goal: plan, test and evaluate ONE change to your bot's strategy.
+   This version steers toward whichever side sees the opponent instead
+   of always charging straight.
+
+   Places to make changes are marked  >>> CHANGE ME <<<
+   Change ONE thing at a time and save each version with a new name,
+   for example: titan_v2_faster.ino
+
+   Ideas to try (see Section 4 for more):
+   - Speed vs traction: raise the forward speeds. Does the scoop stay down?
+   - Edge before attack: move the "Stay in the ring" block above the
+     "Strategy zone" block in loop().
+   - Losing the opponent up close: keep pushing for a short time after
+     the opponent was last seen.
+   - Opening move: add a move at the end of setup(), after the countdown.
+*/
+
+#include <Servo.h>
+
+// Servo pins
+const int LEFT_SERVO_PIN  = A5;
+const int RIGHT_SERVO_PIN = A4;
+
+// Line sensor pins
+const int LINE_LEFT_PIN  = A3;
+const int LINE_RIGHT_PIN = A2;
+
+// IR (enemy) sensor pins
+const int ENEMY_LEFT_PIN  = A1;
+const int ENEMY_RIGHT_PIN = A0;
+
+// Stop values. Copy your trimmed values from sketch 01a.
+const int LEFT_STOP  = 90;
+const int RIGHT_STOP = 90;
+
+// >>> CHANGE ME <<< Threshold from Section 3
+int enemyThreshold = 200;
+
+// >>> CHANGE ME <<< Forward speeds
+// Left: 90 = stop, 180 = full forward. Right: 90 = stop, 0 = full forward.
+// Faster pushes harder, but too fast lifts the front and the scoop.
+int LEFT_FORWARD  = 120;
+int RIGHT_FORWARD = 60;
+
+// >>> CHANGE ME <<< Escape tuning from Section 2, in milliseconds
+int REVERSE_TIME = 500;
+int TURN_TIME    = 300;
+
+Servo leftServo;
+Servo rightServo;
+
+void setup()
+{
+  delay(1000);  // let the voltage settle before attaching servos
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  leftServo.attach(LEFT_SERVO_PIN);
+  rightServo.attach(RIGHT_SERVO_PIN);
+  stopMotors();
+
+  pinMode(LINE_LEFT_PIN, INPUT_PULLUP);   // LOW = white line
+  pinMode(LINE_RIGHT_PIN, INPUT_PULLUP);  // LOW = white line
+
+  start();  // 5-second countdown
+
+  // >>> CHANGE ME <<< Opening move goes here (optional)
+}
+
+void loop()
+{
+  int enemyLeft  = analogRead(ENEMY_LEFT_PIN);
+  int enemyRight = analogRead(ENEMY_RIGHT_PIN);
+
+  bool seeLeft  = (enemyLeft > enemyThreshold);   // true if left sensor sees opponent
+  bool seeRight = (enemyRight > enemyThreshold);  // true if right sensor sees opponent
+
+  // ===== STRATEGY ZONE: how the bot reacts to the opponent =====
+  if (seeLeft && seeRight)
+  {
+    forward();    // opponent straight ahead: charge with the scoop
+  }
+  else if (seeLeft)
+  {
+    turnLeft();   // opponent on the left: turn toward it
+  }
+  else if (seeRight)
+  {
+    turnRight();  // opponent on the right: turn toward it
+  }
+  else
+  {
+    search();     // nothing seen: spin to look
+  }
+  // ===== END STRATEGY ZONE =====
+
+  // LED on whenever either sensor sees the opponent
+  if (seeLeft || seeRight)
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else
+  {
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+
+  // ----- Stay in the ring -----
+  int leftLine  = digitalRead(LINE_LEFT_PIN);
+  int rightLine = digitalRead(LINE_RIGHT_PIN);
+
+  if (leftLine == LOW)
+  {
+    reverse();
+    delay(REVERSE_TIME);
+    turnRight();
+    delay(TURN_TIME);
+    forward();
+  }
+  else if (rightLine == LOW)
+  {
+    reverse();
+    delay(REVERSE_TIME);
+    turnLeft();
+    delay(TURN_TIME);
+    forward();
+  }
+}
+
+/* Drive functions
+   Continuous rotation servos: 90 = stop
+   The right servo is mounted the other way, so its numbers are flipped. */
+
+void forward()
+{
+  leftServo.write(LEFT_FORWARD);
+  rightServo.write(RIGHT_FORWARD);
+}
+
+void reverse()
+{
+  leftServo.write(80);
+  rightServo.write(100);
+}
+
+void turnLeft()
+{
+  leftServo.write(70);
+  rightServo.write(70);
+}
+
+void turnRight()
+{
+  leftServo.write(110);
+  rightServo.write(110);
+}
+
+void search()  // >>> CHANGE ME <<< try a different search pattern
+{
+  leftServo.write(70);
+  rightServo.write(70);
+}
+
+void stopMotors()
+{
+  leftServo.write(LEFT_STOP);
+  rightServo.write(RIGHT_STOP);
+}
+
+void start()  // blink the onboard LED 5 times as a countdown
+{
+  stopMotors();
+  for (int i = 0; i < 5; i++)
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+  }
+}
