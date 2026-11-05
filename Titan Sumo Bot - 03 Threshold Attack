@@ -1,0 +1,182 @@
+/* Titan Sumo Bot - 03 Threshold Attack
+   Use with: Section 3
+
+   Goal: choose a threshold from your own data so the bot attacks real
+   opponents and ignores everything else.
+   This is the full sumo behaviour: search, attack and stay in the ring.
+
+   How to use:
+   1. Set enemyThreshold using your Section 1 IR table.
+   2. Upload and run matches against a target.
+   3. Watch the onboard LED: ON = the bot thinks it sees an opponent.
+   4. To see readings live, keep the USB cable plugged in, hold or lift
+      the bot, and open the Serial Monitor (9600 baud).
+   5. Push a target right up against the scoop. Watch the readings.
+      Does the bot still "see" it?
+*/
+
+#include <Servo.h>
+
+// Servo pins
+const int LEFT_SERVO_PIN  = A5;
+const int RIGHT_SERVO_PIN = A4;
+
+// Line sensor pins
+const int LINE_LEFT_PIN  = A3;
+const int LINE_RIGHT_PIN = A2;
+
+// IR (enemy) sensor pins
+const int ENEMY_LEFT_PIN  = A1;
+const int ENEMY_RIGHT_PIN = A0;
+
+// Stop values. Copy your trimmed values from sketch 01a.
+const int LEFT_STOP  = 90;
+const int RIGHT_STOP = 90;
+
+// Readings above this number count as "opponent detected"
+// Higher number = the opponent must be closer before the bot attacks
+int enemyThreshold = 200;
+
+// Escape tuning from Section 2, in milliseconds
+int REVERSE_TIME = 500;
+int TURN_TIME    = 300;
+
+// Printing timer. millis() lets us print without pausing the bot like delay() would.
+unsigned long lastPrint = 0;
+const int PRINT_EVERY = 200;  // print about 5 times per second
+
+Servo leftServo;
+Servo rightServo;
+
+void setup()
+{
+  delay(1000);  // let the voltage settle before attaching servos
+  Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  leftServo.attach(LEFT_SERVO_PIN);
+  rightServo.attach(RIGHT_SERVO_PIN);
+  stopMotors();
+
+  pinMode(LINE_LEFT_PIN, INPUT_PULLUP);   // LOW = white line
+  pinMode(LINE_RIGHT_PIN, INPUT_PULLUP);  // LOW = white line
+
+  start();  // 5-second countdown
+}
+
+void loop()
+{
+  // ----- Read the IR sensors -----
+  int enemyLeft  = analogRead(ENEMY_LEFT_PIN);
+  int enemyRight = analogRead(ENEMY_RIGHT_PIN);
+
+  // ----- Attack or search -----
+  bool attacking;
+  if (enemyLeft > enemyThreshold || enemyRight > enemyThreshold)
+  {
+    forward();  // opponent seen: charge with the scoop
+    attacking = true;
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else
+  {
+    search();   // nothing seen: spin to look
+    attacking = false;
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+
+  // ----- Print what the bot sees -----
+  if (millis() - lastPrint >= PRINT_EVERY)
+  {
+    lastPrint = millis();
+    Serial.print("IR L: ");
+    Serial.print(enemyLeft);
+    Serial.print("  IR R: ");
+    Serial.print(enemyRight);
+    Serial.print("  Threshold: ");
+    Serial.print(enemyThreshold);
+    if (attacking)
+    {
+      Serial.println("  -> ATTACK");
+    }
+    else
+    {
+      Serial.println("  -> SEARCH");
+    }
+  }
+
+  // ----- Stay in the ring -----
+  int leftLine  = digitalRead(LINE_LEFT_PIN);
+  int rightLine = digitalRead(LINE_RIGHT_PIN);
+
+  if (leftLine == LOW)
+  {
+    Serial.println("EDGE: left line found");
+    reverse();
+    delay(REVERSE_TIME);
+    turnRight();
+    delay(TURN_TIME);
+    forward();
+  }
+  else if (rightLine == LOW)
+  {
+    Serial.println("EDGE: right line found");
+    reverse();
+    delay(REVERSE_TIME);
+    turnLeft();
+    delay(TURN_TIME);
+    forward();
+  }
+}
+
+/* Drive functions
+   Continuous rotation servos: 90 = stop
+   The right servo is mounted the other way, so its numbers are flipped. */
+
+void forward()
+{
+  leftServo.write(120);  // slowed from 180 to avoid wheelies
+  rightServo.write(60);  // slowed from 0 to avoid wheelies
+}
+
+void reverse()
+{
+  leftServo.write(80);
+  rightServo.write(100);
+}
+
+void turnLeft()
+{
+  leftServo.write(70);
+  rightServo.write(70);
+}
+
+void turnRight()
+{
+  leftServo.write(110);
+  rightServo.write(110);
+}
+
+void search()  // spin in place to look for an opponent
+{
+  leftServo.write(70);
+  rightServo.write(70);
+}
+
+void stopMotors()
+{
+  leftServo.write(LEFT_STOP);
+  rightServo.write(RIGHT_STOP);
+}
+
+void start()  // blink the onboard LED 5 times as a countdown
+{
+  stopMotors();
+  for (int i = 0; i < 5; i++)
+  {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+  }
+}
