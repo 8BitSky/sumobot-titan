@@ -1,0 +1,53 @@
+/* Titan Sumo Bot - 00 Connection Test
+   Use with: Getting Started
+
+   Goal: check that your computer can upload code to the robot.
+   The wheels should NOT drive in this sketch. They may creep slightly
+   until you trim them in sketch 01a.
+
+   What you should see:
+   - The onboard LED blinks once per second
+   - The Serial Monitor (9600 baud) counts the seconds
+*/
+
+#include <Servo.h>  // servo library, comes with the Arduino IDE
+
+// Servo pins (same as the FingerTech base code)
+const int LEFT_SERVO_PIN  = A5;
+const int RIGHT_SERVO_PIN = A4;
+
+// Stop values. Copy your trimmed values from sketch 01a.
+const int LEFT_STOP  = 90;
+const int RIGHT_STOP = 90;
+
+Servo leftServo;
+Servo rightServo;
+
+int seconds = 0;  // counts how long the program has run
+
+void setup()
+{
+  delay(1000);         // let the voltage settle before attaching servos
+  Serial.begin(9600);  // start talking to the Serial Monitor
+  pinMode(LED_BUILTIN, OUTPUT);
+
+  // Attach the servos and hold them still so they don't twitch
+  leftServo.attach(LEFT_SERVO_PIN);
+  rightServo.attach(RIGHT_SERVO_PIN);
+  leftServo.write(LEFT_STOP);
+  rightServo.write(RIGHT_STOP);
+
+  Serial.println("Titan connected! Your upload worked.");
+}
+
+void loop()
+{
+  digitalWrite(LED_BUILTIN, HIGH);  // LED on
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);   // LED off
+  delay(500);
+
+  seconds = seconds + 1;
+  Serial.print("Seconds running: ");
+  Serial.println(seconds);
+} 
